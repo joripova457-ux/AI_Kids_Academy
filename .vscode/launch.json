@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "AI Kids Academy (Flutter Run)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "--dart-define-from-file=.env.json"
+            ]
+        },
+        {
+            "name": "AI Kids Academy (Chrome / Web)",
+            "request": "launch",
+            "type": "dart",
+            "program": "lib/main.dart",
+            "args": [
+                "-d",
+                "chrome",
+                "--dart-define-from-file=.env.json"
+            ]
+        }
+    ]
+}

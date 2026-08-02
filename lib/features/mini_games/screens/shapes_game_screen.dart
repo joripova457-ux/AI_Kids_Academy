@@ -23,7 +23,7 @@ class _ShapeItem {
   });
 }
 
-/// Shapes & Colors Game Screen (Shakllar va Ranglar O'yini)
+/// Shapes & Colors Game Screen (Stage 6 Fix)
 class ShapesGameScreen extends StatefulWidget {
   const ShapesGameScreen({super.key});
 
@@ -49,7 +49,7 @@ class _ShapesGameScreenState extends State<ShapesGameScreen> {
   @override
   void initState() {
     super.initState();
-    _stars = StorageService.instance.getTotalStars();
+    _stars = StorageService.instance.getModuleStars('mini_games');
     _nextQuestion();
   }
 
@@ -105,7 +105,6 @@ class _ShapesGameScreenState extends State<ShapesGameScreen> {
               ),
               const SizedBox(height: 24),
 
-              // Target Prompt Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -140,7 +139,6 @@ class _ShapesGameScreenState extends State<ShapesGameScreen> {
 
               const SizedBox(height: 24),
 
-              // Options Grid
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

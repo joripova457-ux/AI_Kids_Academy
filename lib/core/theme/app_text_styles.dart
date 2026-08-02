@@ -55,7 +55,7 @@ abstract class AppTextStyles {
     color: AppColors.brightYellow,
   );
 
-  // Aliases for 6-BOSQICH
+  // Aliases for 7-BOSQICH
   static TextStyle get h1 => titleLarge;
   static TextStyle get h2 => headingMedium;
   static TextStyle get h3 => headingSmall;

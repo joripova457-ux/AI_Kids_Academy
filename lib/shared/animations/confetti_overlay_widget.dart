@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-/// Confetti Animation Widget (10-Talab)
+/// Confetti Animation Widget (Mounted Safe)
 /// G'alaba va to'g'ri javoblarda quvnoq konfetti zarralarini yog'diradi.
 class ConfettiOverlayWidget extends StatefulWidget {
   final Widget child;
@@ -30,11 +30,13 @@ class _ConfettiOverlayWidgetState extends State<ConfettiOverlayWidget>
       vsync: this,
       duration: const Duration(milliseconds: 2500),
     )..addListener(() {
-        setState(() {
-          for (var p in _particles) {
-            p.update();
-          }
-        });
+        if (mounted) {
+          setState(() {
+            for (var p in _particles) {
+              p.update();
+            }
+          });
+        }
       });
 
     _generateParticles();
@@ -69,12 +71,15 @@ class _ConfettiOverlayWidgetState extends State<ConfettiOverlayWidget>
     super.didUpdateWidget(oldWidget);
     if (widget.show && !oldWidget.show) {
       _generateParticles();
-      _controller.forward(from: 0.0);
+      if (mounted) {
+        _controller.forward(from: 0.0);
+      }
     }
   }
 
   @override
   void dispose() {
+    _controller.stop();
     _controller.dispose();
     super.dispose();
   }

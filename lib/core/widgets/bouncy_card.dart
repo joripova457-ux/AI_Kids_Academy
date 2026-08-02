@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-/// Interaktiv, bosilganda saqraydigan karta vidjeti (BouncyCard)
+/// Interaktiv, bosilganda sakraydigan karta vidjeti (BouncyCard - Mounted Safe)
 class BouncyCard extends StatefulWidget {
   final String title;
   final String? subtitle;
@@ -36,12 +36,16 @@ class _BouncyCardState extends State<BouncyCard> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapDown: (_) {
+        if (mounted) setState(() => _isPressed = true);
+      },
       onTapUp: (_) {
-        setState(() => _isPressed = false);
+        if (mounted) setState(() => _isPressed = false);
         widget.onTap();
       },
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapCancel: () {
+        if (mounted) setState(() => _isPressed = false);
+      },
       child: AnimatedScale(
         scale: _isPressed ? 0.94 : 1.0,
         duration: const Duration(milliseconds: 120),

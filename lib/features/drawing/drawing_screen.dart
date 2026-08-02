@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -11,6 +12,13 @@ class _DrawingPoint {
   final Paint paint;
 
   _DrawingPoint({required this.offset, required this.paint});
+
+  Map<String, dynamic> toJson() => {
+        'dx': offset.dx,
+        'dy': offset.dy,
+        'color': paint.color.toARGB32(),
+        'width': paint.strokeWidth,
+      };
 }
 
 class _DrawingPainter extends CustomPainter {
@@ -33,7 +41,7 @@ class _DrawingPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
 
-/// Rasm chizish taxtasi (Drawing Canvas Screen)
+/// Rasm chizish taxtasi (Drawing Canvas Screen — Stage 6 Fix & Undo Support)
 class DrawingScreen extends StatefulWidget {
   const DrawingScreen({super.key});
 
@@ -43,6 +51,9 @@ class DrawingScreen extends StatefulWidget {
 
 class _DrawingScreenState extends State<DrawingScreen> {
   final List<_DrawingPoint?> _points = [];
+  final List<List<_DrawingPoint?>> _strokeHistory = [];
+  List<_DrawingPoint?> _currentStroke = [];
+
   Color _selectedColor = AppColors.primaryViolet;
   double _strokeWidth = 5.0;
   bool _isEraser = false;
@@ -61,18 +72,51 @@ class _DrawingScreenState extends State<DrawingScreen> {
   @override
   void initState() {
     super.initState();
-    _stars = StorageService.instance.getTotalStars();
+    _stars = StorageService.instance.getModuleStars('drawing');
+  }
+
+  void _undoLastStroke() {
+    if (_strokeHistory.isEmpty) return;
+    AudioService().playClickSound();
+
+    setState(() {
+      _strokeHistory.removeLast();
+      _points.clear();
+      for (final stroke in _strokeHistory) {
+        _points.addAll(stroke);
+      }
+    });
   }
 
   void _clearCanvas() {
+    if (_points.isEmpty) return;
     AudioService().playClickSound();
     setState(() {
       _points.clear();
+      _strokeHistory.clear();
+      _currentStroke.clear();
     });
   }
 
   void _saveDrawing() async {
+    if (_points.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Chizish uchun taxtaga bosing! 🎨"),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
     AudioService().playStarEarnSound();
+
+    final drawingData = jsonEncode({
+      'timestamp': DateTime.now().toIso8601String(),
+      'pointCount': _points.where((p) => p != null).length,
+    });
+    await StorageService.instance.saveDrawingData(drawingData);
+
     final updatedStars = await StorageService.instance.addModuleStars('drawing', 2);
 
     if (mounted) {
@@ -83,7 +127,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            "Rasm galereyaga saqlandi! 🎨✨ +2 ⭐️",
+            "Rasm local storage'da saqlandi! 🎨✨ +2 ⭐️",
             style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
           ),
           backgroundColor: AppColors.softTeal,
@@ -120,24 +164,39 @@ class _DrawingScreenState extends State<DrawingScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: GestureDetector(
-                  onPanUpdate: (details) {
-                    final RenderBox renderBox = context.findRenderObject() as RenderBox;
-                    final localPos = renderBox.globalToLocal(details.globalPosition);
-
+                  onPanStart: (details) {
+                    _currentStroke = [];
+                    final point = _DrawingPoint(
+                      offset: details.localPosition,
+                      paint: Paint()
+                        ..color = _isEraser ? Colors.white : _selectedColor
+                        ..strokeCap = StrokeCap.round
+                        ..strokeWidth = _isEraser ? _strokeWidth * 2.5 : _strokeWidth,
+                    );
                     setState(() {
-                      _points.add(
-                        _DrawingPoint(
-                          offset: localPos,
-                          paint: Paint()
-                            ..color = _isEraser ? Colors.white : _selectedColor
-                            ..strokeCap = StrokeCap.round
-                            ..strokeWidth = _isEraser ? _strokeWidth * 2.5 : _strokeWidth,
-                        ),
-                      );
+                      _points.add(point);
+                      _currentStroke.add(point);
+                    });
+                  },
+                  onPanUpdate: (details) {
+                    final point = _DrawingPoint(
+                      offset: details.localPosition,
+                      paint: Paint()
+                        ..color = _isEraser ? Colors.white : _selectedColor
+                        ..strokeCap = StrokeCap.round
+                        ..strokeWidth = _isEraser ? _strokeWidth * 2.5 : _strokeWidth,
+                    );
+                    setState(() {
+                      _points.add(point);
+                      _currentStroke.add(point);
                     });
                   },
                   onPanEnd: (details) {
-                    _points.add(null);
+                    setState(() {
+                      _points.add(null);
+                      _currentStroke.add(null);
+                      _strokeHistory.add(List.from(_currentStroke));
+                    });
                   },
                   child: CustomPaint(
                     painter: _DrawingPainter(points: _points),
@@ -220,7 +279,7 @@ class _DrawingScreenState extends State<DrawingScreen> {
 
                 const SizedBox(height: 12),
 
-                // Stroke Width & Clear/Save Action Buttons
+                // Stroke Width & Undo / Clear / Save Action Buttons
                 Row(
                   children: [
                     Text("O'lcham:", style: AppTextStyles.bodyMedium),
@@ -232,6 +291,11 @@ class _DrawingScreenState extends State<DrawingScreen> {
                         activeColor: AppColors.primaryViolet,
                         onChanged: (val) => setState(() => _strokeWidth = val),
                       ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.undo_rounded, color: AppColors.primaryViolet),
+                      onPressed: _strokeHistory.isNotEmpty ? _undoLastStroke : null,
+                      tooltip: "Ortga qaytarish",
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),

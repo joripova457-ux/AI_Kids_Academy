@@ -10,7 +10,7 @@ import 'screens/memory_game_screen.dart';
 import 'screens/shapes_game_screen.dart';
 import 'screens/riddles_game_screen.dart';
 
-/// Mini o'yinlar bo'limi sahifasi (Mini Games Screen with Dynamic Stars)
+/// Mini o'yinlar bo'limi sahifasi (Mini Games Screen — Stage 6 Fix)
 class MiniGamesScreen extends StatefulWidget {
   const MiniGamesScreen({super.key});
 
@@ -19,7 +19,6 @@ class MiniGamesScreen extends StatefulWidget {
 }
 
 class _MiniGamesScreenState extends State<MiniGamesScreen> {
-  int _stars = 0;
   int _moduleStars = 0;
   double _progress = 0.0;
 
@@ -32,7 +31,6 @@ class _MiniGamesScreenState extends State<MiniGamesScreen> {
   void _loadData() {
     final storage = StorageService.instance;
     setState(() {
-      _stars = storage.getTotalStars();
       _moduleStars = storage.getModuleStars('mini_games');
       _progress = storage.getModuleProgress('mini_games');
     });
@@ -51,7 +49,7 @@ class _MiniGamesScreenState extends State<MiniGamesScreen> {
     return ChildModeScaffold(
       appBar: ChildAppBar(
         title: "🎮 Mini O'yinlar",
-        starCount: _stars,
+        starCount: _moduleStars,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),

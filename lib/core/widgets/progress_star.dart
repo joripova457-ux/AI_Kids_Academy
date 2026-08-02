@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-/// Yulduzli progress indikatori va reyting vidjeti
+/// Yulduzli progress indikatori va reyting vidjeti (With Safe Range Animated Scale)
 class ProgressStar extends StatefulWidget {
   final int count;
   final int total;
@@ -31,14 +31,15 @@ class _ProgressStarState extends State<ProgressStar>
     super.initState();
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 400),
     );
+
     _scaleAnimation = TweenSequence<double>([
-      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.3), weight: 50),
-      TweenSequenceItem(tween: Tween(begin: 1.3, end: 1.0), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.25), weight: 50),
+      TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 50),
     ]).animate(CurvedAnimation(
       parent: _animController,
-      curve: Curves.elasticOut,
+      curve: Curves.easeInOut,
     ));
   }
 
@@ -46,12 +47,15 @@ class _ProgressStarState extends State<ProgressStar>
   void didUpdateWidget(covariant ProgressStar oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.count != widget.count) {
-      _animController.forward(from: 0.0);
+      if (mounted) {
+        _animController.forward(from: 0.0);
+      }
     }
   }
 
   @override
   void dispose() {
+    _animController.stop();
     _animController.dispose();
     super.dispose();
   }

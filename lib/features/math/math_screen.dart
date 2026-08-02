@@ -11,7 +11,7 @@ import '../../services/audio_service.dart';
 import '../../services/storage_service.dart';
 import '../../services/tts_service.dart';
 
-/// Matematika bo'limi (Math Screen with Comparison, Level Map & Interactive Quizzes)
+/// Matematika bo'limi (Math Screen — Stage 6 Fix)
 class MathScreen extends StatefulWidget {
   const MathScreen({super.key});
 
@@ -24,13 +24,13 @@ class _MathScreenState extends State<MathScreen> {
   bool _inGameMode = false;
   int _num1 = 3;
   int _num2 = 2;
-  String _op = '+'; // +, -, > (Comparison mode)
+  String _op = '+';
   String? _selectedOption;
   bool _isSuccess = false;
   int _stars = 0;
 
-  final List<LevelItemData> _levels = [
-    const LevelItemData(
+  final List<LevelItemData> _levels = const [
+    LevelItemData(
       levelNumber: 1,
       title: "1-Daraja: Oson Qo'shish ➕",
       description: "1 dan 5 gacha sonlarni qo'shish",
@@ -38,7 +38,7 @@ class _MathScreenState extends State<MathScreen> {
       isCompleted: true,
       starsEarned: 3,
     ),
-    const LevelItemData(
+    LevelItemData(
       levelNumber: 2,
       title: "2-Daraja: Qo'shish 10 gacha ➕",
       description: "10 gacha bo'lgan misollar",
@@ -46,7 +46,7 @@ class _MathScreenState extends State<MathScreen> {
       isCompleted: false,
       starsEarned: 2,
     ),
-    const LevelItemData(
+    LevelItemData(
       levelNumber: 3,
       title: "3-Daraja: Ayirish ➖",
       description: "Sonlarni ayirishni o'rganamiz",
@@ -54,7 +54,7 @@ class _MathScreenState extends State<MathScreen> {
       isCompleted: false,
       starsEarned: 1,
     ),
-    const LevelItemData(
+    LevelItemData(
       levelNumber: 4,
       title: "4-Daraja: Taqqoslash ⚖️",
       description: "Qaysi biri katta: >, < yoki = ?",
@@ -62,7 +62,7 @@ class _MathScreenState extends State<MathScreen> {
       isCompleted: false,
       starsEarned: 2,
     ),
-    const LevelItemData(
+    LevelItemData(
       levelNumber: 5,
       title: "5-Daraja: Super Zukko 🏆",
       description: "Chaqqon hisoblash testi",
@@ -75,7 +75,7 @@ class _MathScreenState extends State<MathScreen> {
   @override
   void initState() {
     super.initState();
-    _stars = StorageService.instance.getTotalStars();
+    _stars = StorageService.instance.getModuleStars('math');
   }
 
   void _startLevel(LevelItemData level) {
@@ -102,7 +102,7 @@ class _MathScreenState extends State<MathScreen> {
       _num1 = (now % 6) + 5;
       _num2 = ((now ~/ 5) % _num1) + 1;
     } else if (_currentLevel == 4) {
-      _op = '⚖️'; // Comparison mode
+      _op = '⚖️';
       _num1 = (now % 9) + 1;
       _num2 = ((now ~/ 3) % 9) + 1;
     } else {
@@ -227,7 +227,6 @@ class _MathScreenState extends State<MathScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Question Card
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),

@@ -24,7 +24,7 @@ import '../../parent_gate/parent_gate_screen.dart';
 import '../../uzbek/uzbek_language_screen.dart';
 import '../models/section_item.dart';
 
-/// AI Kids Academy Bosh Sahifasi (Home Screen — 6-BOSQICH Upgrade)
+/// AI Kids Academy Bosh Sahifasi (Home Screen — Stage 6 Fix & Stability)
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -35,6 +35,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   late ChildProfile _profile;
   late RecommendationModel _aiRecommendation;
+  int _totalStars = 0;
 
   @override
   void initState() {
@@ -46,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final storage = StorageService.instance;
     setState(() {
       _profile = storage.getActiveProfile();
+      _totalStars = storage.getTotalStars();
       _aiRecommendation = SmartRecommendationEngine().getTopRecommendation();
     });
   }
@@ -178,7 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return ChildModeScaffold(
       appBar: ChildAppBar(
         title: "AI Kids Academy ✨",
-        starCount: _profile.totalStars,
+        starCount: _totalStars,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),

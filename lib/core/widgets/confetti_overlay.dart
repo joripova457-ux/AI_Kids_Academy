@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 
-/// Konfetti va yulduzlar portlashi animatsiya overlay vidjeti
+/// Konfetti va yulduzlar portlashi animatsiya overlay vidjeti (Mounted Safe)
 class ConfettiOverlay extends StatefulWidget {
   final Widget child;
   final bool isTriggered;
@@ -33,9 +33,12 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
       duration: const Duration(milliseconds: 2500),
     );
 
-    _controller.addListener(() => setState(() {}));
+    _controller.addListener(() {
+      if (mounted) setState(() {});
+    });
+
     _controller.addStatusListener((status) {
-      if (status == AnimationStatus.completed) {
+      if (status == AnimationStatus.completed && mounted) {
         widget.onFinished?.call();
       }
     });
@@ -51,7 +54,9 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isTriggered && widget.isTriggered) {
       _spawnParticles();
-      _controller.forward(from: 0.0);
+      if (mounted) {
+        _controller.forward(from: 0.0);
+      }
     }
   }
 
@@ -85,6 +90,7 @@ class _ConfettiOverlayState extends State<ConfettiOverlay>
 
   @override
   void dispose() {
+    _controller.stop();
     _controller.dispose();
     super.dispose();
   }

@@ -12,7 +12,7 @@ import '../../services/tts_service.dart';
 import '../../shared/animations/confetti_overlay_widget.dart';
 import '../../shared/widgets/ai_tutor_bubble_widget.dart';
 
-/// Harflarni o'rganish bo'limi sahifasi (Alphabet Screen with AI Tutor & History)
+/// Harflarni o'rganish bo'limi sahifasi (Alphabet Screen — Stage 6 Fix)
 class AlphabetScreen extends StatefulWidget {
   const AlphabetScreen({super.key});
 
@@ -21,7 +21,7 @@ class AlphabetScreen extends StatefulWidget {
 }
 
 class _AlphabetScreenState extends State<AlphabetScreen> {
-  final Map<String, List<Map<String, String>>> _letterWords = {
+  final Map<String, List<Map<String, String>>> _letterWords = const {
     'A': [
       {'word': 'Anor 🍎', 'meaning': 'Maza tola shirin meva'},
       {'word': 'Ayiq 🐻', 'meaning': 'O\'rmon polvoni'},
@@ -48,7 +48,7 @@ class _AlphabetScreenState extends State<AlphabetScreen> {
     ],
   };
 
-  final List<String> _letters = [
+  final List<String> _letters = const [
     'A', 'B', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
     'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'X', 'Y', 'Z',
     "O'", "G'", 'SH', 'CH', 'NG'
@@ -63,7 +63,7 @@ class _AlphabetScreenState extends State<AlphabetScreen> {
   @override
   void initState() {
     super.initState();
-    _stars = StorageService.instance.getTotalStars();
+    _stars = StorageService.instance.getModuleStars('alphabet');
     _aiTutorMessage = AiTutorService().getModuleIntro('alphabet');
     _currentDifficulty = AdaptiveLearningService().getDifficulty('alphabet');
   }
@@ -97,17 +97,19 @@ class _AlphabetScreenState extends State<AlphabetScreen> {
 
     final praise = AiTutorService().onCorrectAnswer(speakVoice: false);
 
-    setState(() {
-      _selectedLetter = letter;
-      _stars = updatedStars;
-      _showCelebration = true;
-      _aiTutorMessage = "$praise Bugun $letter harfini mukammal o'rgandik! 🎉";
-      _currentDifficulty = AdaptiveLearningService().getDifficulty('alphabet');
-    });
+    if (mounted) {
+      setState(() {
+        _selectedLetter = letter;
+        _stars = updatedStars;
+        _showCelebration = true;
+        _aiTutorMessage = "$praise Bugun $letter harfini mukammal o'rgandik! 🎉";
+        _currentDifficulty = AdaptiveLearningService().getDifficulty('alphabet');
+      });
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) setState(() => _showCelebration = false);
-    });
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (mounted) setState(() => _showCelebration = false);
+      });
+    }
   }
 
   @override

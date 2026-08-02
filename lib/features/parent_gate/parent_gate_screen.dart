@@ -9,13 +9,13 @@ import '../../core/widgets/parent_mode_scaffold.dart';
 import '../../data/models/accessibility_settings_model.dart';
 import '../../data/models/child_profile.dart';
 import '../../data/models/notification_settings_model.dart';
+import '../../data/models/user_statistics.dart';
 import '../../services/audio_service.dart';
-import '../../services/session_timer_service.dart';
 import '../../services/storage_service.dart';
 import '../../shared/widgets/monthly_progress_chart_painter.dart';
 import '../../shared/widgets/weekly_progress_chart_painter.dart';
 
-/// Ota-ona paneli PIN-kodli xavfsiz darvoza va Dashboard 2.0 (Parent Panel 2.0 — 4, 5, 8, 11-Talablar)
+/// Ota-ona paneli PIN-kodli xavfsiz darvoza va Dashboard 2.0 (Stage 6 Fix — Real Data Binding)
 class ParentGateScreen extends StatefulWidget {
   const ParentGateScreen({super.key});
 
@@ -30,14 +30,10 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
   String? _errorMessage;
 
   late ChildProfile _profile;
+  late UserStatistics _userStats;
   late NotificationSettingsModel _notificationSettings;
   late AccessibilitySettingsModel _accessibilitySettings;
 
-  int _totalStars = 0;
-  int _totalXP = 0;
-  int _todayTimeMinutes = 18;
-  int _weeklyTimeMinutes = 120;
-  int _monthlyTimeMinutes = 660;
   Timer? _refreshTimer;
 
   @override
@@ -46,9 +42,7 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
     _loadParentData();
     _refreshTimer = Timer.periodic(const Duration(seconds: 10), (_) {
       if (mounted) {
-        setState(() {
-          _todayTimeMinutes = SessionTimerService().getTodayScreenTimeMinutes();
-        });
+        _loadParentData();
       }
     });
   }
@@ -61,18 +55,19 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
     super.dispose();
   }
 
+  final TextEditingController _geminiApiKeyController = TextEditingController();
+
   void _loadParentData() {
     final storage = StorageService.instance;
-    _profile = storage.getActiveProfile();
-    _nameController.text = _profile.name;
-    _totalStars = storage.getTotalStars();
-    _totalXP = storage.getTotalXP();
-    _todayTimeMinutes = storage.getScreenTimeToday();
-    _weeklyTimeMinutes = storage.getScreenTimeWeekly();
-    _monthlyTimeMinutes = storage.getScreenTimeMonthly();
+    setState(() {
+      _profile = storage.getActiveProfile();
+      _nameController.text = _profile.name;
+      _geminiApiKeyController.text = storage.getCustomGeminiApiKey();
+      _userStats = storage.getUserStatistics();
 
-    _notificationSettings = storage.getNotificationSettings();
-    _accessibilitySettings = storage.getAccessibilitySettings();
+      _notificationSettings = storage.getNotificationSettings();
+      _accessibilitySettings = storage.getAccessibilitySettings();
+    });
   }
 
   void _verifyPin() {
@@ -97,6 +92,10 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
   void _saveProfileChanges() async {
     AudioService().playClickSound();
     final newName = _nameController.text.trim();
+    final apiKey = _geminiApiKeyController.text.trim();
+
+    await StorageService.instance.saveCustomGeminiApiKey(apiKey);
+
     if (newName.isNotEmpty) {
       final updated = _profile.copyWith(name: newName);
       await StorageService.instance.saveActiveProfile(updated);
@@ -105,7 +104,7 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
       });
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Bola profili saqlandi! ✨")),
+          const SnackBar(content: Text("Sozlamalar va Gemini API kaliti saqlandi! ✨")),
         );
       }
     }
@@ -197,6 +196,10 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
   }
 
   Widget _buildDashboardScreen() {
+    final storage = StorageService.instance;
+    final uzbekProgress = (storage.getModuleProgress('uzbek') * 100).round();
+    final mathProgress = (storage.getModuleProgress('math') * 100).round();
+
     return ParentModeScaffold(
       title: "Parent Dashboard 2.0 📊",
       body: SingleChildScrollView(
@@ -212,9 +215,9 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
               mainAxisSpacing: 12,
               childAspectRatio: 1.5,
               children: [
-                _buildStatCard("Umumiy XP", "$_totalXP XP", Icons.bolt_rounded,
+                _buildStatCard("Umumiy XP", "${_userStats.totalXP} XP", Icons.bolt_rounded,
                     AppColors.brightYellow),
-                _buildStatCard("Yulduzlar", "$_totalStars ⭐️",
+                _buildStatCard("Yulduzlar", "${_userStats.totalStars} ⭐️",
                     Icons.star_rounded, AppColors.warmCoral),
                 _buildStatCard("Joriy Level", "Level ${_profile.level}",
                     Icons.military_tech_rounded, AppColors.primaryViolet),
@@ -244,11 +247,11 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildTimeBadge("Bugun", "$_todayTimeMinutes daqiqa"),
+                      _buildTimeBadge("Bugun", "${_userStats.todayTimeMinutes} daqiqa"),
                       _buildTimeBadge(
-                          "Hafta", "${(_weeklyTimeMinutes / 60).toStringAsFixed(1)} soat"),
+                          "Hafta", "${(_userStats.weeklyTimeMinutes / 60).toStringAsFixed(1)} soat"),
                       _buildTimeBadge(
-                          "Oy", "${(_monthlyTimeMinutes / 60).toStringAsFixed(1)} soat"),
+                          "Oy", "${(_userStats.monthlyTimeMinutes / 60).toStringAsFixed(1)} soat"),
                     ],
                   ),
                   const SizedBox(height: 20),
@@ -260,15 +263,7 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
                     height: 100,
                     width: double.infinity,
                     child: CustomPaint(
-                      painter: WeeklyProgressChartPainter([
-                        15,
-                        25,
-                        10,
-                        30,
-                        20,
-                        45,
-                        _todayTimeMinutes.toDouble()
-                      ]),
+                      painter: WeeklyProgressChartPainter(_userStats.weeklyProgress),
                     ),
                   ),
                 ],
@@ -295,7 +290,7 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
                 height: 120,
                 width: double.infinity,
                 child: CustomPaint(
-                  painter: MonthlyProgressChartPainter([2.0, 3.5, 4.0, 5.5]),
+                  painter: MonthlyProgressChartPainter(const [2.0, 3.5, 4.0, 5.5]),
                 ),
               ),
             ),
@@ -312,14 +307,14 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
               ),
               child: Column(
                 children: [
-                  _buildSubjectRow("Eng yaxshi fan 🏆", "O'zbek tili (90%)",
+                  _buildSubjectRow("Eng yaxshi fan 🏆", "O'zbek tili ($uzbekProgress%)",
                       AppColors.softTeal),
                   const Divider(),
                   _buildSubjectRow("Ko'proq mashq kerak 💡",
-                      "Matematika (60%)", AppColors.warmCoral),
+                      "Matematika ($mathProgress%)", AppColors.warmCoral),
                   const Divider(),
                   _buildSubjectRow("Tugatilgan topshiriqlar 📝",
-                      "${_profile.completedTasksCount} ta topshiriq", AppColors.primaryViolet),
+                      "${_userStats.completedLessons} ta topshiriq", AppColors.primaryViolet),
                   const Divider(),
                   _buildSubjectRow("Oxirgi faollik sanasi 🗓️",
                       _profile.lastActiveDate, AppColors.skyBlue),
@@ -403,6 +398,20 @@ class _ParentGateScreenState extends State<ParentGateScreen> {
                     controller: _nameController,
                     decoration: InputDecoration(
                       labelText: "Bola Ismi",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _geminiApiKeyController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      labelText: "Gemini API Key (AI Chat & Story uchun)",
+                      hintText: "AIzaSy...",
+                      helperText: "Kiritmasangiz default / offline engine ishlaydi",
+                      prefixIcon: const Icon(Icons.key_rounded),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),

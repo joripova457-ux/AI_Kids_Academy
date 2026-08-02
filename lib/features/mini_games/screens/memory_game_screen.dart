@@ -22,7 +22,7 @@ class _CardModel {
   });
 }
 
-/// Memory Match Game Screen (Xotira O'yini)
+/// Memory Match Game Screen (Stage 6 Fix)
 class MemoryGameScreen extends StatefulWidget {
   const MemoryGameScreen({super.key});
 
@@ -39,20 +39,20 @@ class _MemoryGameScreenState extends State<MemoryGameScreen> {
   bool _isGameWon = false;
   int _earnedStars = 0;
 
-  final List<String> _iconsPool = [
+  final List<String> _iconsPool = const [
     '🐱', '🐶', '🦁', '🐻', '🐼', '🦊', '🐸', '🐵'
   ];
 
   @override
   void initState() {
     super.initState();
-    _earnedStars = StorageService.instance.getTotalStars();
+    _earnedStars = StorageService.instance.getModuleStars('mini_games');
     _startNewGame();
   }
 
   void _startNewGame() {
     final selectedIcons = List<String>.from(_iconsPool)..shuffle();
-    final gameIcons = selectedIcons.take(4).toList(); // 4 pairs = 8 cards
+    final gameIcons = selectedIcons.take(4).toList();
     final paired = [...gameIcons, ...gameIcons]..shuffle();
 
     _cards = List.generate(
@@ -85,7 +85,6 @@ class _MemoryGameScreenState extends State<MemoryGameScreen> {
       final first = _firstSelectedCard!;
 
       if (first.icon == card.icon) {
-        // Matched!
         AudioService().playSuccessSound();
         setState(() {
           first.isMatched = true;
@@ -107,7 +106,6 @@ class _MemoryGameScreenState extends State<MemoryGameScreen> {
           }
         });
       } else {
-        // Not matched
         AudioService().playErrorSound();
         Timer(const Duration(milliseconds: 800), () {
           if (mounted) {
@@ -144,7 +142,6 @@ class _MemoryGameScreenState extends State<MemoryGameScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Game Grid
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),

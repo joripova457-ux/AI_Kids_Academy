@@ -23,7 +23,7 @@ class _RiddleItem {
   });
 }
 
-/// Riddles Game Screen (Topishmoqlar O'yini)
+/// Riddles Game Screen (Stage 6 Fix)
 class RiddlesGameScreen extends StatefulWidget {
   const RiddlesGameScreen({super.key});
 
@@ -68,7 +68,7 @@ class _RiddlesGameScreenState extends State<RiddlesGameScreen> {
   @override
   void initState() {
     super.initState();
-    _stars = StorageService.instance.getTotalStars();
+    _stars = StorageService.instance.getModuleStars('mini_games');
   }
 
   void _checkAnswer(int index) {
@@ -125,7 +125,6 @@ class _RiddlesGameScreenState extends State<RiddlesGameScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Riddle Card
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -191,7 +190,6 @@ class _RiddlesGameScreenState extends State<RiddlesGameScreen> {
 
               const SizedBox(height: 20),
 
-              // Options
               ...List.generate(riddle.options.length, (optIndex) {
                 final optionText = riddle.options[optIndex];
                 final isSelected = _selectedIndex == optIndex;

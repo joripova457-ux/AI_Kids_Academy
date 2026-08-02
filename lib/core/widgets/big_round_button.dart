@@ -4,7 +4,7 @@ import '../theme/app_text_styles.dart';
 
 enum BigRoundButtonVariant { primary, secondary, success, warning, playful }
 
-/// Bolalar uchun interaktiv, animatsiyali va yirik tugma vidjeti
+/// Bolalar uchun interaktiv, animatsiyali va yirik tugma vidjeti (Mounted Safe)
 class BigRoundButton extends StatefulWidget {
   final String text;
   final IconData? icon;
@@ -62,19 +62,25 @@ class _BigRoundButtonState extends State<BigRoundButton> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isDisabled = widget.onPressed == null || widget.isLoading;
+
     return GestureDetector(
-      onTapDown: widget.onPressed == null || widget.isLoading
-          ? null
-          : (_) => setState(() => _isPressed = true),
-      onTapUp: widget.onPressed == null || widget.isLoading
+      onTapDown: isDisabled
           ? null
           : (_) {
-              setState(() => _isPressed = false);
+              if (mounted) setState(() => _isPressed = true);
+            },
+      onTapUp: isDisabled
+          ? null
+          : (_) {
+              if (mounted) setState(() => _isPressed = false);
               widget.onPressed?.call();
             },
-      onTapCancel: widget.onPressed == null || widget.isLoading
+      onTapCancel: isDisabled
           ? null
-          : () => setState(() => _isPressed = false),
+          : () {
+              if (mounted) setState(() => _isPressed = false);
+            },
       child: AnimatedScale(
         scale: _isPressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 100),
