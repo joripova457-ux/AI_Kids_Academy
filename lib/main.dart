@@ -14,7 +14,6 @@ void main() async {
   SessionTimerService().start();
 
 
-
   runApp(const AIKidsAcademyApp());
 }
 
