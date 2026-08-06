@@ -13,7 +13,6 @@ void main() async {
   // Real vaqt taymerini ishga tushirish (Screen Time Tracking)
   SessionTimerService().start();
 
-
   runApp(const AIKidsAcademyApp());
 }
 
